@@ -1,15 +1,47 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import com.google.gson.Gson;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Scanner;
+
 public class Main {
     public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+        Scanner sc = new Scanner(System.in);
+        Usuario usuario = new Usuario();
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+        System.out.print("Digite o Usuario: ");
+        String nome = sc.nextLine();
+        usuario.setNome(nome);
+
+        String endereco = "https://api.github.com/users/" + usuario.getNome();
+
+        System.out.println(endereco);
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(endereco))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 404) {
+                throw new ErroConsultaGitHubException("Usuário não encontrado no GitHub.");
+            }
+
+            String json = response.body();
+            Gson gson = new Gson();
+            DataRecord record = gson.fromJson(json, DataRecord.class);
+
+            System.out.println(record);
+
+
+        } catch (ErroConsultaGitHubException e) {
+            System.out.println(e.getMessage());
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Ocorreu um erro na consulta ao GitHub: " + e.getMessage());
         }
     }
 }
